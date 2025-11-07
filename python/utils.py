@@ -39,8 +39,10 @@ def generateExchangeKey(privateKey,publicKey):
     prik=x25519.X25519PrivateKey.from_private_bytes(privKey)
     pubk=x25519.X25519PublicKey.from_public_bytes(pubKey)
     exchangeKey=prik.exchange(pubk)
+    toWrite=base64.b64encode(exchangeKey)
+    print(toWrite)
     with open('exchange.key','wb') as f:
-        f.write(exchangeKey)
+        f.write(toWrite)
 
 def encryptData(data,exKey):
     initialization_vector=os.urandom(12)
