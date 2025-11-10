@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react";
 import api from "../utils/api";
-import {generateKeyPair,generateExchangeKey,encryptData} from '@/utils/utils.js'
+import {generateKeyPair,generateExchangeKey,encryptData,decryptData} from '@/utils/utils.js'
 export default function Home() {
   const [msg, setMsg] = useState("")
   async function sendMsg()
@@ -10,12 +10,24 @@ export default function Home() {
     const result=await api.post('/sendMsg',encryptedData)
   }
 
+  async function getMsg()
+  {
+    const {data}=await api.get('/getData',{params:{
+    "name":"testKey",
+    "field":"key"
+    }
+    })
+    console.log(data)   
+    decryptData(data.cipherText,data.tag,data.initialization_vector,"test")
+  }
+  
   async function handshake()
   {
     const publickey=await generateKeyPair() 
     const result = await api.post('/publicKey', { publicKey: publickey })
     const exchange = await generateExchangeKey(localStorage.getItem('private_key'), result.data.key)
   }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white sm:items-start">
@@ -28,6 +40,8 @@ export default function Home() {
         <button className="m-auto p-2 bg-amber-200  text-black rounded-full" onClick={handshake}>
           HandShake Button
         </button>
+
+        <button className="m-auto p-2 bg-amber-200  text-black rounded-full" onClick={getMsg}> Get Message </button>
       </main>
     </div>
   );

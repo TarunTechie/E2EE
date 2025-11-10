@@ -23,7 +23,6 @@ export async function generateHKDF(key) {
         },baseKey,{name:"AES-GCM",length:256},true,['encrypt','decrypt']
     )
     
-    console.log(Buffer.from(await crypto.subtle.exportKey("raw",hkdfKey)).toString('base64'))
     return hkdfKey
 }
 
@@ -69,14 +68,27 @@ export async function encryptData(data, exkey)
     return result
 }
 
-export async function decryptData(exKey,cipherText,tag,initializationVector)
+export async function decryptData(cipherText,tag,initializationVector,exKey)
 {
-    const aes_key = await generateHKDF(exKey)
-    const dicipher = crypto.createDecipheriv('aes-256-gcm', aes_key, initializationVector)
-    dicipher.setAuthTag(tag)
-    let data = dicipher.update(cipherText,'hex' ,'utf-8')
-    data += dicipher.final('utf-8')
-    return data
+    const exchangeKey = Buffer.from(localStorage.getItem("exchange_key"),'base64')
+    const aes_key = await generateHKDF(exchangeKey)
+
+    const iv = Buffer.from(initializationVector,'base64')
+    const authTag = Buffer.from(tag,'base64')
+    const text = Buffer.from(cipherText,'base64')
+    
+    const combined = new Uint8Array(text.length+authTag.length)
+    combined.set(text)
+    combined.set(authTag,text.length)
+    const data = await crypto.subtle.decrypt(
+        {
+            name: "AES-GCM",
+            iv,
+            tagLength:128
+        },
+        aes_key,combined
+    )
+    console.log(Buffer.from(data).toString('utf-8'))
 }
 
 // const u1= await generateKeyPair()

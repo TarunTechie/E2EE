@@ -13,7 +13,6 @@ def generateHKDF(key):
     exKey=base64.b64decode(key)
     hkdf=HKDF(algorithm=hashes.SHA256(),length=32,salt=salt,info=info)
     hdfkKey=hkdf.derive(exKey)
-    print("This is the hdfkKey",base64.b64encode(hdfkKey).decode())
     return hdfkKey
 
 def generateKeyPairs():
@@ -40,19 +39,22 @@ def generateExchangeKey(privateKey,publicKey):
     pubk=x25519.X25519PublicKey.from_public_bytes(pubKey)
     exchangeKey=prik.exchange(pubk)
     toWrite=base64.b64encode(exchangeKey)
-    print(toWrite)
     with open('exchange.key','wb') as f:
         f.write(toWrite)
 
-def encryptData(data,exKey):
-    initialization_vector=os.urandom(12)
+def encryptData(data:str,exKey):
     with open ('exchange.key','rb') as f:
         exchangeKey=f.read()
     aes_key=generateHKDF(exchangeKey)
-    encryptor=Cipher(algorithms.AES(aes_key),modes.GCM(initialization_vector)).encryptor()
+    initialization_vector=os.urandom(12)
+    
     dataB=data.encode('utf-8')
+    encryptor=Cipher(algorithms.AES(aes_key),modes.GCM(initialization_vector)).encryptor()
     cypher=encryptor.update(dataB)+encryptor.finalize()
-    return cypher,encryptor.tag,initialization_vector
+    result={
+        "cipherText":base64.b64encode(cypher),"tag":base64.b64encode(encryptor.tag),"initialization_vector":base64.b64encode(initialization_vector)
+    }
+    return result
 
 def decryptData(exKey,cipherText,tag,initialization_vector):
     with open ('exchange.key','rb') as f:
@@ -62,7 +64,6 @@ def decryptData(exKey,cipherText,tag,initialization_vector):
     tag_bytes=base64.b64decode(tag)
     decryptor=Cipher(algorithms.AES(aes_key),modes.GCM(iv_bytes,tag_bytes)).decryptor()
     data=decryptor.update(base64.b64decode(cipherText))+decryptor.finalize()
-    print(data)
     return data
 
 # u1pri,u1pub=generateKeyPairs()

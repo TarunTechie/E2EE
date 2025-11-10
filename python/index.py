@@ -1,7 +1,7 @@
 from typing import Union
 
 from fastapi import FastAPI
-from utils import generateKeyPairs, generateExchangeKey , decryptData
+from utils import generateKeyPairs, generateExchangeKey , decryptData , encryptData
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -10,6 +10,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:3001",
 ]
 
 app.add_middleware(
@@ -42,3 +43,9 @@ def getKeys(key:Key):
 def getMessage(message:Message):
     decryptData("temp",message.cipherText,message.tag,message.initializationVector)
     return {"msg":"vanakam da mapilai"}
+
+@app.get('/getData')
+def getData(name:str,field:str):
+    print(name)
+    result=encryptData(name,"tes")
+    return result
